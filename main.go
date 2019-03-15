@@ -124,11 +124,8 @@ func authenticate() (Auth, error) {
 func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, error) {
 	url := fmt.Sprintf("http://%s:%s/api/core/v2/namespaces/%s/events", apiHost, apiPort, namespace)
 	events := []*types.Event{}
-	req, err := http.NewRequest(
-		"GET",
-		url,
-		nil,
-	)
+
+	req, err := http.NewRequest("GET", url, nil)
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 	req.Header.Set("Content-Type", "application/json")
@@ -139,10 +136,11 @@ func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, erro
 	}
 
 	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(b))
+	body, err := ioutil.ReadAll(resp.Body)
 
-	return events, nil
+	err = json.Unmarshal(body, &events)
+
+	return events, err
 }
 
 func evalAggregate() error {
