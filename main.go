@@ -29,6 +29,17 @@ type Auth struct {
 	ExpiresAt    int64  `json:"expires_at"`
 }
 
+type Counters struct {
+	Entities int
+	Checks   int
+	Ok       int
+	Warning  int
+	Critical int
+	Unknown  int
+	Total    int
+	Stale    int
+}
+
 func main() {
 	rootCmd := configureRootCommand()
 	if err := rootCmd.Execute(); err != nil {
@@ -206,7 +217,34 @@ func evalAggregate() error {
 
 	events, err := getEvents(auth, "default")
 
+	counters := Counters{}
+
+	entities := map[string]string{}
+	checks := map[string]string{}
+
+	for _, event := range events {
+		entities[event.Entity.ObjectMeta.Name] = ""
+		checks[event.Check.ObjectMeta.Name] = ""
+
+		switch event.Check.Status {
+		case 0:
+			counters.Ok += 1
+		case 1:
+			counters.Warning += 1
+		case 2:
+			counters.Critical += 1
+		default:
+			counters.Unknown += 1
+		}
+
+		counters.Total += 1
+	}
+
+	counters.Entities = len(entities)
+	counters.Checks = len(checks)
+
 	fmt.Printf("hello world: %s\n", events)
+	fmt.Printf("counters: %s\n", counters)
 
 	return err
 }
