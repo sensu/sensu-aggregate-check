@@ -7,18 +7,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/sensu/sensu-go/types"
 	"github.com/spf13/cobra"
 )
 
 var (
-	labels     string
-	namespaces string
-	apiHost    string
-	apiPort    string
-	apiUser    string
-	apiPass    string
+	checkLabels  string
+	entityLabels string
+	namespaces   string
+	apiHost      string
+	apiPort      string
+	apiUser      string
+	apiPass      string
 )
 
 type Auth struct {
@@ -42,9 +44,15 @@ func configureRootCommand() *cobra.Command {
 		RunE:  run,
 	}
 
-	cmd.Flags().StringVarP(&labels,
-		"labels",
-		"l",
+	cmd.Flags().StringVarP(&checkLabels,
+		"check-labels",
+		"c",
+		"",
+		"aggregate=foo,app=bar")
+
+	cmd.Flags().StringVarP(&entityLabels,
+		"entity-labels",
+		"e",
 		"",
 		"aggregate=foo,app=bar")
 
@@ -78,7 +86,7 @@ func configureRootCommand() *cobra.Command {
 		"P@ssw0rd!",
 		"itsatrap")
 
-	_ = cmd.MarkFlagRequired("labels")
+	_ = cmd.MarkFlagRequired("check-labels")
 
 	return cmd
 }
@@ -121,11 +129,51 @@ func authenticate() (Auth, error) {
 	return auth, err
 }
 
-func filterEvents(events []*types.Event, labels string) []*types.Event {
-	return events
+func parseLabelArg(labelArg string) map[string]string {
+	labels := map[string]string{}
+
+	pairs := strings.Split(labelArg, ",")
+
+	for _, pair := range pairs {
+		parts := strings.Split(pair, "=")
+		if len(parts) == 2 {
+			labels[parts[0]] = parts[1]
+		}
+	}
+
+	return labels
 }
 
-func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, error) {
+func filterEvents(events []*types.Event) []*types.Event {
+	result := []*types.Event{}
+
+	cLabels := parseLabelArg(checkLabels)
+	eLabels := parseLabelArg(entityLabels)
+
+	for _, event := range events {
+		selected := true
+
+		for key, value := range cLabels {
+			if event.Check.ObjectMeta.Labels[key] != value {
+				selected = false
+			}
+		}
+
+		for key, value := range eLabels {
+			if event.Entity.ObjectMeta.Labels[key] != value {
+				selected = false
+			}
+		}
+
+		if selected {
+			result = append(result, event)
+		}
+	}
+
+	return result
+}
+
+func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 	url := fmt.Sprintf("http://%s:%s/api/core/v2/namespaces/%s/events", apiHost, apiPort, namespace)
 	events := []*types.Event{}
 
@@ -144,9 +192,9 @@ func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, erro
 
 	err = json.Unmarshal(body, &events)
 
-	filtered := filterEvents(events, labels)
+	result := filterEvents(events)
 
-	return filtered, err
+	return result, err
 }
 
 func evalAggregate() error {
@@ -156,7 +204,7 @@ func evalAggregate() error {
 		return err
 	}
 
-	events, err := getEvents(auth, "default", "aggregate=foo")
+	events, err := getEvents(auth, "default")
 
 	fmt.Printf("hello world: %s\n", events)
 

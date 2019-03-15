@@ -58,7 +58,9 @@
     "metadata": {
       "name": "webserver01",
       "namespace": "default",
-      "labels": null,
+      "labels": {
+        "app": "foo"
+      },
       "annotations": null
     }
   },
@@ -114,7 +116,9 @@
     "metadata": {
       "name": "check-nginx",
       "namespace": "default",
-      "labels": null,
+      "labels": {
+        "aggregate": "foo"
+      },
       "annotations": null
     }
   }
