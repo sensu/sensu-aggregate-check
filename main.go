@@ -105,6 +105,12 @@ func configureRootCommand() *cobra.Command {
 		0,
 		"75")
 
+	cmd.Flags().IntVarP(&percentCrit,
+		"percent-crit",
+		"C",
+		0,
+		"50")
+
 	_ = cmd.MarkFlagRequired("check-labels")
 
 	return cmd
@@ -263,11 +269,18 @@ func evalAggregate() error {
 	counters.Entities = len(entities)
 	counters.Checks = len(checks)
 
-	fmt.Printf("counters: %v\n", counters)
+	fmt.Printf("Counters: %+v\n", counters)
+
+	percent := int(float64(counters.Ok/counters.Total) * 100)
+
+	if percentCrit != 0 {
+		if percent <= percentCrit {
+			fmt.Printf("CRITICAL: less than %d%% percent OK (%d%%)\n", percentCrit, percent)
+			os.Exit(2)
+		}
+	}
 
 	if percentWarn != 0 {
-		percent := int(float64(counters.Ok/counters.Total) * 100)
-
 		if percent <= percentWarn {
 			fmt.Printf("WARNING: less than %d%% percent OK (%d%%)\n", percentWarn, percent)
 			os.Exit(1)
