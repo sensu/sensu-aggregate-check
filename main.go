@@ -121,6 +121,10 @@ func authenticate() (Auth, error) {
 	return auth, err
 }
 
+func filterEvents(events []*types.Event, labels string) []*types.Event {
+	return events
+}
+
 func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, error) {
 	url := fmt.Sprintf("http://%s:%s/api/core/v2/namespaces/%s/events", apiHost, apiPort, namespace)
 	events := []*types.Event{}
@@ -140,7 +144,9 @@ func getEvents(auth Auth, namespace string, labels string) ([]*types.Event, erro
 
 	err = json.Unmarshal(body, &events)
 
-	return events, err
+	filtered := filterEvents(events, labels)
+
+	return filtered, err
 }
 
 func evalAggregate() error {
