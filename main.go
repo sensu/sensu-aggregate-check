@@ -21,6 +21,8 @@ var (
 	apiPort      string
 	apiUser      string
 	apiPass      string
+	percentWarn  int
+	percentCrit  int
 )
 
 type Auth struct {
@@ -96,6 +98,12 @@ func configureRootCommand() *cobra.Command {
 		"P",
 		"P@ssw0rd!",
 		"itsatrap")
+
+	cmd.Flags().IntVarP(&percentWarn,
+		"percent-warn",
+		"W",
+		0,
+		"75")
 
 	_ = cmd.MarkFlagRequired("check-labels")
 
@@ -215,7 +223,19 @@ func evalAggregate() error {
 		return err
 	}
 
-	events, err := getEvents(auth, "default")
+	events := []*types.Event{}
+
+	for _, namespace := range strings.Split(namespaces, ",") {
+		selected, err := getEvents(auth, namespace)
+
+		if err != nil {
+			return err
+		}
+
+		for _, event := range selected {
+			events = append(events, event)
+		}
+	}
 
 	counters := Counters{}
 
@@ -243,8 +263,16 @@ func evalAggregate() error {
 	counters.Entities = len(entities)
 	counters.Checks = len(checks)
 
-	fmt.Printf("hello world: %s\n", events)
-	fmt.Printf("counters: %s\n", counters)
+	fmt.Printf("counters: %v\n", counters)
+
+	if percentWarn != 0 {
+		percent := int(float64(counters.Ok/counters.Total) * 100)
+
+		if percent <= percentWarn {
+			fmt.Printf("WARNING: less than %d%% percent OK (%d%%)\n", percentWarn, percent)
+			os.Exit(1)
+		}
+	}
 
 	return err
 }
