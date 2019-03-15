@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+sensu-aggregate-check
 
 # Test binary, build with `go test -c`
 *.test
