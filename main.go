@@ -23,6 +23,8 @@ var (
 	apiPass      string
 	warnPercent  int
 	critPercent  int
+	warnCount    int
+	critCount    int
 )
 
 type Auth struct {
@@ -39,7 +41,6 @@ type Counters struct {
 	Critical int
 	Unknown  int
 	Total    int
-	Stale    int
 }
 
 func main() {
@@ -59,7 +60,7 @@ func configureRootCommand() *cobra.Command {
 
 	cmd.Flags().StringVarP(&checkLabels,
 		"check-labels",
-		"c",
+		"l",
 		"",
 		"aggregate=foo,app=bar")
 
@@ -101,15 +102,27 @@ func configureRootCommand() *cobra.Command {
 
 	cmd.Flags().IntVarP(&warnPercent,
 		"warn-percent",
-		"W",
+		"w",
 		0,
 		"75")
 
 	cmd.Flags().IntVarP(&critPercent,
 		"crit-percent",
-		"C",
+		"c",
 		0,
 		"50")
+
+	cmd.Flags().IntVarP(&warnCount,
+		"warn-count",
+		"W",
+		0,
+		"2")
+
+	cmd.Flags().IntVarP(&critCount,
+		"crit-count",
+		"C",
+		0,
+		"3")
 
 	_ = cmd.MarkFlagRequired("check-labels")
 
@@ -293,6 +306,20 @@ func evalAggregate() error {
 		if percent <= warnPercent {
 			fmt.Printf("WARNING: Less than %d%% percent OK (%d%%)\n", warnPercent, percent)
 			os.Exit(1)
+		}
+	}
+
+	if critCount != 0 {
+		if counters.Critical >= critCount {
+			fmt.Printf("CRITICAL: %d or more Events are in a Critical state (%d)\n", critCount, counters.Critical)
+			os.Exit(2)
+		}
+	}
+
+	if warnCount != 0 {
+		if counters.Warning >= warnCount {
+			fmt.Printf("WARNING: %d or more Events are in a Warning state (%d)\n", warnCount, counters.Warning)
+			os.Exit(2)
 		}
 	}
 
