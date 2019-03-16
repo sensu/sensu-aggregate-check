@@ -21,8 +21,8 @@ var (
 	apiPort      string
 	apiUser      string
 	apiPass      string
-	percentWarn  int
-	percentCrit  int
+	warnPercent  int
+	critPercent  int
 )
 
 type Auth struct {
@@ -99,14 +99,14 @@ func configureRootCommand() *cobra.Command {
 		"P@ssw0rd!",
 		"itsatrap")
 
-	cmd.Flags().IntVarP(&percentWarn,
-		"percent-warn",
+	cmd.Flags().IntVarP(&warnPercent,
+		"warn-percent",
 		"W",
 		0,
 		"75")
 
-	cmd.Flags().IntVarP(&percentCrit,
-		"percent-crit",
+	cmd.Flags().IntVarP(&critPercent,
+		"crit-percent",
 		"C",
 		0,
 		"50")
@@ -181,12 +181,16 @@ func filterEvents(events []*types.Event) []*types.Event {
 		for key, value := range cLabels {
 			if event.Check.ObjectMeta.Labels[key] != value {
 				selected = false
+				break
 			}
 		}
 
-		for key, value := range eLabels {
-			if event.Entity.ObjectMeta.Labels[key] != value {
-				selected = false
+		if selected {
+			for key, value := range eLabels {
+				if event.Entity.ObjectMeta.Labels[key] != value {
+					selected = false
+					break
+				}
 			}
 		}
 
@@ -271,18 +275,23 @@ func evalAggregate() error {
 
 	fmt.Printf("Counters: %+v\n", counters)
 
+	if counters.Total == 0 {
+		fmt.Printf("WARNING: No Events returned for Aggregate\n")
+		os.Exit(1)
+	}
+
 	percent := int(float64(counters.Ok/counters.Total) * 100)
 
-	if percentCrit != 0 {
-		if percent <= percentCrit {
-			fmt.Printf("CRITICAL: less than %d%% percent OK (%d%%)\n", percentCrit, percent)
+	if critPercent != 0 {
+		if percent <= critPercent {
+			fmt.Printf("CRITICAL: Less than %d%% percent OK (%d%%)\n", critPercent, percent)
 			os.Exit(2)
 		}
 	}
 
-	if percentWarn != 0 {
-		if percent <= percentWarn {
-			fmt.Printf("WARNING: less than %d%% percent OK (%d%%)\n", percentWarn, percent)
+	if warnPercent != 0 {
+		if percent <= warnPercent {
+			fmt.Printf("WARNING: Less than %d%% percent OK (%d%%)\n", warnPercent, percent)
 			os.Exit(1)
 		}
 	}
