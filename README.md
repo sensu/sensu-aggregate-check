@@ -1,35 +1,32 @@
 # Sensu Go Aggregate Check Plugin
 TravisCI: [![TravisCI Build Status](https://travis-ci.org/sensu/sensu-aggregate-check.svg?branch=master)](https://travis-ci.org/sensu/sensu-aggregate-check)
 
-TODO: Description.
+An aggregate makes it possible to treat the result of multiple disparate check executions – executed across multiple disparate systems – as a single result (Event). Aggregates are extremely useful in dynamic environments and/or environments that have a reasonable tolerance for failure. Aggregates should be used when a service can be considered healthy as long as a minimum threshold is satisfied (e.g. are at least 5 healthy web servers? are at least 70% of N processes healthy?).
 
-## Installation
-
-Download the latest version of the sensu-aggregate-check from [releases][1],
-or create an executable script from this source.
-
-From the local path of the sensu-aggregate-check repository:
-
-```
-go build -o /usr/local/bin/sensu-aggregate-check main.go
-```
+This plugin allows you to query the Sensu Go Backend API for Events matching certain criteria (labels). This plugin generates a set of counters (e.g. events total, events in an OK state, etc) from the Events query and provides several CLI arguments to evaluate the computed aggregate counters (e.g. --warn-percent=75).
 
 ## Configuration
 
 Example Sensu Go definition:
 
-```json
-{
-    "api_version": "core/v2",
-    "type": "CheckConfig",
-    "metadata": {
-        "namespace": "default",
-        "name": "sensu-aggregate-check"
-    },
-    "spec": {
-        "...": "..."
-    }
-}
+```yaml
+api_version: core/v2
+type: CheckConfig
+metadata:
+  namespace: default
+  name: dummy-app-aggregate
+spec:
+  runtime_assets:
+  - sensu-aggregate-checkplugins
+  command: sensu-aggregate-check --api-user=foo --api-pass=bar --check-labels='aggregate=healthz,app=dummy' --warn-percent=75 --crit-percent=50
+  subscriptions:
+  - backend
+  publish: true
+  interval: 30
+  handlers:
+  - slack
+  - pagerduty
+  - email
 ```
 
 ## Usage Examples
@@ -43,13 +40,16 @@ Usage:
   sensu-aggregate-check [flags]
 
 Flags:
-  -h, --help                help for sensu-aggregate-check
-  -l, --labels string       aggregate=foo,app=bar
-  -n, --namespaces string   us-east-1,us-west-2 (default "default")
+  -H, --api-host string        Sensu Go Backend API Host (e.g. 'sensu-backend.example.com') (default "127.0.0.1")
+  -P, --api-pass string        Sensu Go Backend API User (default "P@ssw0rd!")
+  -p, --api-port string        Sensu Go Backend API Port (e.g. 4242) (default "8080")
+  -u, --api-user string        Sensu Go Backend API User (default "admin")
+  -l, --check-labels string    Sensu Go Event Check Labels to filter by (e.g. 'aggregate=foo')
+  -C, --crit-count int         Critical threshold - count of Events in critical state
+  -c, --crit-percent int       Critical threshold - % of Events in critical state
+  -e, --entity-labels string   Sensu Go Event Entity Labels to filter by (e.g. 'aggregate=foo,app=bar')
+  -h, --help                   help for sensu-aggregate-check
+  -n, --namespaces string      Comma-delimited list of Sensu Go Namespaces to query for Events (e.g. 'us-east-1,us-west-2') (default "default")
+  -W, --warn-count int         Warning threshold - count of Events in warning state
+  -w, --warn-percent int       Warning threshold - % of Events in warning state
 ```
-
-## Contributing
-
-See https://github.com/sensu/sensu-go/blob/master/CONTRIBUTING.md
-
-[1]: https://github.com/sensu/sensu-aggregate-check/releases

@@ -62,67 +62,67 @@ func configureRootCommand() *cobra.Command {
 		"check-labels",
 		"l",
 		"",
-		"aggregate=foo,app=bar")
+		"Sensu Go Event Check Labels to filter by (e.g. 'aggregate=foo')")
 
 	cmd.Flags().StringVarP(&entityLabels,
 		"entity-labels",
 		"e",
 		"",
-		"aggregate=foo,app=bar")
+		"Sensu Go Event Entity Labels to filter by (e.g. 'aggregate=foo,app=bar')")
 
 	cmd.Flags().StringVarP(&namespaces,
 		"namespaces",
 		"n",
 		"default",
-		"us-east-1,us-west-2")
+		"Comma-delimited list of Sensu Go Namespaces to query for Events (e.g. 'us-east-1,us-west-2')")
 
 	cmd.Flags().StringVarP(&apiHost,
 		"api-host",
 		"H",
 		"127.0.0.1",
-		"sensu-backend.example.com")
+		"Sensu Go Backend API Host (e.g. 'sensu-backend.example.com')")
 
 	cmd.Flags().StringVarP(&apiPort,
 		"api-port",
 		"p",
 		"8080",
-		"5555")
+		"Sensu Go Backend API Port (e.g. 4242)")
 
 	cmd.Flags().StringVarP(&apiUser,
 		"api-user",
 		"u",
 		"admin",
-		"ackbar")
+		"Sensu Go Backend API User")
 
 	cmd.Flags().StringVarP(&apiPass,
 		"api-pass",
 		"P",
 		"P@ssw0rd!",
-		"itsatrap")
+		"Sensu Go Backend API User")
 
 	cmd.Flags().IntVarP(&warnPercent,
 		"warn-percent",
 		"w",
 		0,
-		"75")
+		"Warning threshold - % of Events in warning state")
 
 	cmd.Flags().IntVarP(&critPercent,
 		"crit-percent",
 		"c",
 		0,
-		"50")
+		"Critical threshold - % of Events in critical state")
 
 	cmd.Flags().IntVarP(&warnCount,
 		"warn-count",
 		"W",
 		0,
-		"2")
+		"Warning threshold - count of Events in warning state")
 
 	cmd.Flags().IntVarP(&critCount,
 		"crit-count",
 		"C",
 		0,
-		"3")
+		"Critical threshold - count of Events in critical state")
 
 	_ = cmd.MarkFlagRequired("check-labels")
 
