@@ -220,6 +220,9 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 	events := []*types.Event{}
 
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return events, err
+	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 	req.Header.Set("Content-Type", "application/json")
@@ -231,8 +234,14 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return events, err
+	}
 
 	err = json.Unmarshal(body, &events)
+	if err != nil {
+		return events, err
+	}
 
 	result := filterEvents(events)
 
