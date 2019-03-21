@@ -1,5 +1,4 @@
 # Sensu Go Aggregate Check Plugin
-TravisCI: [![TravisCI Build Status](https://travis-ci.org/sensu/sensu-aggregate-check.svg?branch=master)](https://travis-ci.org/sensu/sensu-aggregate-check)
 
 An aggregate makes it possible to treat the result of multiple disparate check executions – executed across multiple disparate systems – as a single result (Event). Aggregates are extremely useful in dynamic environments and/or environments that have a reasonable tolerance for failure. Aggregates should be used when a service can be considered healthy as long as a minimum threshold is satisfied (e.g. are at least 5 healthy web servers? are at least 70% of N processes healthy?).
 
