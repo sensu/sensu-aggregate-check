@@ -7,6 +7,11 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+## [0.0.4] - 2019-03-22
+
+### Fixed
+- Fixed percent calculation
+
 ## [0.0.3] - 2019-03-22
 
 ### Fixed

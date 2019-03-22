@@ -302,7 +302,9 @@ func evalAggregate() error {
 		os.Exit(1)
 	}
 
-	percent := int(float64(counters.Ok/counters.Total) * 100)
+	percent := int((float64(counters.Ok) / float64(counters.Total)) * 100)
+
+	fmt.Printf("PERCENT: %v\n", percent)
 
 	if critPercent != 0 {
 		if percent <= critPercent {
