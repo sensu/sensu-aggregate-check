@@ -1,6 +1,6 @@
 # Sensu Go Aggregate Check Plugin
 
-An aggregate makes it possible to treat the result of multiple disparate check executions – executed across multiple disparate systems – as a single result (Event). Aggregates are extremely useful in dynamic environments and/or environments that have a reasonable tolerance for failure. Aggregates should be used when a service can be considered healthy as long as a minimum threshold is satisfied (e.g. are at least 5 healthy web servers? are at least 70% of N processes healthy?).
+An aggregate makes it possible to treat the result of multiple disparate check executions executed across multiple disparate systems as a single result (Event). Aggregates are extremely useful in dynamic environments and/or environments that have a reasonable tolerance for failure. Aggregates should be used when a service can be considered healthy as long as a minimum threshold is satisfied (e.g. are at least 5 healthy web servers? are at least 70% of N processes healthy?).
 
 This plugin allows you to query the Sensu Go Backend API for Events matching certain criteria (labels). This plugin generates a set of counters (e.g. events total, events in an OK state, etc) from the Events query and provides several CLI arguments to evaluate the computed aggregate counters (e.g. --warn-percent=75).
 
@@ -16,7 +16,7 @@ metadata:
   name: dummy-app-aggregate
 spec:
   runtime_assets:
-  - sensu-aggregate-checkplugins
+  - sensu-aggregate-check
   command: sensu-aggregate-check --api-user=foo --api-pass=bar --check-labels='aggregate=healthz,app=dummy' --warn-percent=75 --crit-percent=50
   subscriptions:
   - backend
