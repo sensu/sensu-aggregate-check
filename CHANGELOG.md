@@ -7,6 +7,12 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+## [0.0.7] - 2019-08-14
+
+### Added
+
+Open sourced this Asset.
+
 ## [0.0.6] - 2019-03-22
 
 ### Fixed
