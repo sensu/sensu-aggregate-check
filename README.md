@@ -39,13 +39,15 @@ Usage:
   sensu-aggregate-check [flags]
 
 Flags:
-  -H, --api-host string        Sensu Go Backend API Host (e.g. 'sensu-backend.example.com') (default "127.0.0.1")
+  -H, --api-host string        Sensu Go Backend API Host (e.g. 'https://sensu-backend.example.com', http://127.0.0.1) (default "http://127.0.0.1")
   -P, --api-pass string        Sensu Go Backend API User (default "P@ssw0rd!")
   -p, --api-port string        Sensu Go Backend API Port (e.g. 4242) (default "8080")
   -u, --api-user string        Sensu Go Backend API User (default "admin")
+  -k, --ca string              Trusted CA file
   -l, --check-labels string    Sensu Go Event Check Labels to filter by (e.g. 'aggregate=foo')
   -C, --crit-count int         Critical threshold - count of Events in critical state
   -c, --crit-percent int       Critical threshold - % of Events in critical state
+  -d, --debug int              Spam terminal - lvl 0-1
   -e, --entity-labels string   Sensu Go Event Entity Labels to filter by (e.g. 'aggregate=foo,app=bar')
   -h, --help                   help for sensu-aggregate-check
   -n, --namespaces string      Comma-delimited list of Sensu Go Namespaces to query for Events (e.g. 'us-east-1,us-west-2') (default "default")

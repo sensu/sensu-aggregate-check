@@ -2,11 +2,15 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/sensu/sensu-go/types"
@@ -17,22 +21,26 @@ var (
 	checkLabels  string
 	entityLabels string
 	namespaces   string
-	apiHost      string
+	apiURL       string
 	apiPort      string
 	apiUser      string
 	apiPass      string
+	trustedCA    string
 	warnPercent  int
 	critPercent  int
 	warnCount    int
 	critCount    int
+	debug        int
 )
 
+// Auth struct
 type Auth struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresAt    int64  `json:"expires_at"`
 }
 
+// Counters struct
 type Counters struct {
 	Entities int
 	Checks   int
@@ -44,6 +52,7 @@ type Counters struct {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rootCmd := configureRootCommand()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -76,11 +85,17 @@ func configureRootCommand() *cobra.Command {
 		"default",
 		"Comma-delimited list of Sensu Go Namespaces to query for Events (e.g. 'us-east-1,us-west-2')")
 
-	cmd.Flags().StringVarP(&apiHost,
+	cmd.Flags().StringVarP(&trustedCA,
+		"ca",
+		"k",
+		"",
+		"Trusted CA file")
+
+	cmd.Flags().StringVarP(&apiURL,
 		"api-host",
 		"H",
-		"127.0.0.1",
-		"Sensu Go Backend API Host (e.g. 'sensu-backend.example.com')")
+		"http://127.0.0.1",
+		"Sensu Go Backend API Host (e.g. 'https://sensu-backend.example.com', http://127.0.0.1)")
 
 	cmd.Flags().StringVarP(&apiPort,
 		"api-port",
@@ -124,6 +139,12 @@ func configureRootCommand() *cobra.Command {
 		0,
 		"Critical threshold - count of Events in critical state")
 
+	cmd.Flags().IntVarP(&debug,
+		"debug",
+		"d",
+		0,
+		"Spam terminal - lvl 0-1")
+
 	_ = cmd.MarkFlagRequired("check-labels")
 
 	return cmd
@@ -138,31 +159,73 @@ func run(cmd *cobra.Command, args []string) error {
 	return evalAggregate()
 }
 
+func clientHTTP() (client *http.Client) {
+	var urlHTTPSScheme = regexp.MustCompile(`^https://.+`)
+	// https url specified
+	if urlHTTPSScheme.MatchString(apiURL) {
+
+		caCertPool, err := x509.SystemCertPool()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if caCertPool == nil {
+			caCertPool = x509.NewCertPool()
+		}
+		// custom ACs given
+		if len(trustedCA) > 0 {
+			caCert, err := ioutil.ReadFile(fmt.Sprintf("%s", trustedCA))
+			if err != nil {
+				log.Fatal(err)
+			}
+			caCertPool.AppendCertsFromPEM(caCert)
+		}
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:            caCertPool,
+					InsecureSkipVerify: false,
+				},
+			},
+		}
+		return client
+	}
+	// plain http
+	return &http.Client{}
+}
+
 func authenticate() (Auth, error) {
 	var auth Auth
-	req, err := http.NewRequest(
-		"GET",
-		fmt.Sprintf("http://%s:%s/auth", apiHost, apiPort),
-		nil,
-	)
+	client := clientHTTP()
+	url := fmt.Sprintf("%s:%s/auth", apiURL, apiPort)
+	if debug >= 0 {
+		log.Println(fmt.Sprintf("authenticate URL: %s", url))
+	}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		log.Println("Couldn't build request")
 		return auth, err
 	}
 
 	req.SetBasicAuth(apiUser, apiPass)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
+		log.Println("Couldn't perform request")
 		return auth, err
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		log.Println("Failed to read response body")
 		return auth, err
 	}
 
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&auth)
+	if err != nil {
+		log.Println(body)
+		log.Fatal(err)
+	}
 
 	return auth, err
 }
@@ -216,7 +279,9 @@ func filterEvents(events []*types.Event) []*types.Event {
 }
 
 func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
-	url := fmt.Sprintf("http://%s:%s/api/core/v2/namespaces/%s/events", apiHost, apiPort, namespace)
+	client := clientHTTP()
+
+	url := fmt.Sprintf("%s:%s/api/core/v2/namespaces/%s/events", apiURL, apiPort, namespace)
 	events := []*types.Event{}
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -227,7 +292,10 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	if debug >= 0 {
+		log.Println(fmt.Sprintf("getEvents req: %+v", req))
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return events, err
 	}
@@ -241,6 +309,10 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 	err = json.Unmarshal(body, &events)
 	if err != nil {
 		return events, err
+	}
+
+	if debug >= 1 {
+		log.Println(fmt.Sprintf("getEvents resp body: %s", string(body)))
 	}
 
 	result := filterEvents(events)
@@ -280,16 +352,16 @@ func evalAggregate() error {
 
 		switch event.Check.Status {
 		case 0:
-			counters.Ok += 1
+			counters.Ok++
 		case 1:
-			counters.Warning += 1
+			counters.Warning++
 		case 2:
-			counters.Critical += 1
+			counters.Critical++
 		default:
-			counters.Unknown += 1
+			counters.Unknown++
 		}
 
-		counters.Total += 1
+		counters.Total++
 	}
 
 	counters.Entities = len(entities)
