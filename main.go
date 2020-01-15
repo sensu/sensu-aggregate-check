@@ -142,7 +142,7 @@ func configureRootCommand() *cobra.Command {
 	cmd.Flags().IntVarP(&debug,
 		"debug",
 		"d",
-		0,
+		-1,
 		"Spam terminal - lvl 0-1")
 
 	_ = cmd.MarkFlagRequired("check-labels")
