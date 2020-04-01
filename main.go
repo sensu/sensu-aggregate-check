@@ -237,8 +237,6 @@ func authenticate() (Auth, error) {
 
 	if (plugin.Secure) {
 		client.Transport.(*http.Transport).TLSClientConfig = &tlsConfig
-		// tr := &http.Transport{TLSClientConfig: tlsConfig}
-		// client = &http.Client{Transport: tr}
 	}
 
 	req, err := http.NewRequest(
@@ -325,8 +323,6 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	if (plugin.Secure) {
 		client.Transport.(*http.Transport).TLSClientConfig = &tlsConfig
-		// tr := &http.Transport{TLSClientConfig: tlsConfig}
-		// client = &http.Client{Transport: tr}
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
