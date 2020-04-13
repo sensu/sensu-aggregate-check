@@ -7,6 +7,11 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+## [0.1.2] - 2020-04-13
+
+### Changed
+- Fixed GitHub release to build with Golang 1.14.x
+
 ## [0.1.1] - 2020-04-13
 
 ### Changed
