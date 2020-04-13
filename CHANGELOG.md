@@ -7,6 +7,8 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+## [0.1.0] - 2020-04-13
+
 ### Added
 Add options to support secure API connections
 Add support for using API key in place of username/password
