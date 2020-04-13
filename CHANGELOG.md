@@ -7,6 +7,9 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Changed
+- Fixed GitHub release to use sha512 checksums
+
 ## [0.1.2] - 2020-04-13
 
 ### Changed
