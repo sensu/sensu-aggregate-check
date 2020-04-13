@@ -7,6 +7,15 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Added
+Add options to support secure API connections
+Add support for using API key in place of username/password
+
+### Changed
+Move to the new Sensu SDK
+Move to Go modules
+Move from Travis to GitHub actions
+
 ## [0.0.7] - 2019-08-14
 
 ### Added
