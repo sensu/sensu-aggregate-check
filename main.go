@@ -20,11 +20,11 @@ type Config struct {
 	CheckLabels        string
 	EntityLabels       string
 	Namespaces         string
-	ApiHost            string
-	ApiPort            string
-	ApiUser            string
-	ApiPass            string
-	ApiKey             string
+	APIHost            string
+	APIPort            int
+	APIUser            string
+	APIPass            string
+	APIKey             string
 	Secure             bool
 	TrustedCAFile      string
 	InsecureSkipVerify bool
@@ -35,12 +35,14 @@ type Config struct {
 	CritCount          int
 }
 
+// Auth represents the authentication info
 type Auth struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresAt    int64  `json:"expires_at"`
 }
 
+// Counters represents the analyzed components and statuses count
 type Counters struct {
 	Entities int
 	Checks   int
@@ -97,16 +99,16 @@ var (
 			Shorthand: "H",
 			Default:   "127.0.0.1",
 			Usage:     "Sensu Go Backend API Host (e.g. 'sensu-backend.example.com')",
-			Value:     &plugin.ApiHost,
+			Value:     &plugin.APIHost,
 		},
 		&sensu.PluginConfigOption{
 			Path:      "api-port",
 			Env:       "",
 			Argument:  "api-port",
 			Shorthand: "p",
-			Default:   "8080",
+			Default:   8080,
 			Usage:     "Sensu Go Backend API Port (e.g. 4242)",
-			Value:     &plugin.ApiPort,
+			Value:     &plugin.APIPort,
 		},
 		&sensu.PluginConfigOption{
 			Path:      "api-user",
@@ -115,7 +117,7 @@ var (
 			Shorthand: "u",
 			Default:   "admin",
 			Usage:     "Sensu Go Backend API User",
-			Value:     &plugin.ApiUser,
+			Value:     &plugin.APIUser,
 		},
 		&sensu.PluginConfigOption{
 			Path:      "api-pass",
@@ -124,7 +126,7 @@ var (
 			Shorthand: "P",
 			Default:   "P@ssw0rd!",
 			Usage:     "Sensu Go Backend API Password",
-			Value:     &plugin.ApiPass,
+			Value:     &plugin.APIPass,
 		},
 		&sensu.PluginConfigOption{
 			Path:      "api-key",
@@ -133,7 +135,7 @@ var (
 			Shorthand: "k",
 			Default:   "",
 			Usage:     "Sensu Go Backend API Key",
-			Value:     &plugin.ApiKey,
+			Value:     &plugin.APIKey,
 		},
 		&sensu.PluginConfigOption{
 			Path:      "warn-percent",
@@ -235,20 +237,20 @@ func authenticate() (Auth, error) {
 	client := http.DefaultClient
 	client.Transport = http.DefaultTransport
 
-	if (plugin.Secure) {
+	if plugin.Secure {
 		client.Transport.(*http.Transport).TLSClientConfig = &tlsConfig
 	}
 
 	req, err := http.NewRequest(
 		"GET",
-		fmt.Sprintf("%s://%s:%s/auth", plugin.Protocol, plugin.ApiHost, plugin.ApiPort),
+		fmt.Sprintf("%s://%s:%d/auth", plugin.Protocol, plugin.APIHost, plugin.APIPort),
 		nil,
 	)
 	if err != nil {
 		return auth, err
 	}
 
-	req.SetBasicAuth(plugin.ApiUser, plugin.ApiPass)
+	req.SetBasicAuth(plugin.APIUser, plugin.APIPass)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -318,10 +320,10 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 	client := http.DefaultClient
 	client.Transport = http.DefaultTransport
 
-	url := fmt.Sprintf("%s://%s:%s/api/core/v2/namespaces/%s/events", plugin.Protocol, plugin.ApiHost, plugin.ApiPort, namespace)
+	url := fmt.Sprintf("%s://%s:%d/api/core/v2/namespaces/%s/events", plugin.Protocol, plugin.APIHost, plugin.APIPort, namespace)
 	events := []*types.Event{}
 
-	if (plugin.Secure) {
+	if plugin.Secure {
 		client.Transport.(*http.Transport).TLSClientConfig = &tlsConfig
 	}
 
@@ -330,10 +332,10 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 		return events, err
 	}
 
-	if len(plugin.ApiKey) == 0 {
+	if len(plugin.APIKey) == 0 {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth.AccessToken))
 	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("Key %s", plugin.ApiKey))
+		req.Header.Set("Authorization", fmt.Sprintf("Key %s", plugin.APIKey))
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -362,7 +364,7 @@ func executeCheck(event *types.Event) (int, error) {
 	var autherr error
 	auth := Auth{}
 
-	if len(plugin.ApiKey) == 0 {
+	if len(plugin.APIKey) == 0 {
 		auth, autherr = authenticate()
 
 		if autherr != nil {
@@ -395,16 +397,16 @@ func executeCheck(event *types.Event) (int, error) {
 
 		switch event.Check.Status {
 		case 0:
-			counters.Ok += 1
+			counters.Ok++
 		case 1:
-			counters.Warning += 1
+			counters.Warning++
 		case 2:
-			counters.Critical += 1
+			counters.Critical++
 		default:
-			counters.Unknown += 1
+			counters.Unknown++
 		}
 
-		counters.Total += 1
+		counters.Total++
 	}
 
 	counters.Entities = len(entities)
