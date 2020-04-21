@@ -247,23 +247,31 @@ func authenticate() (Auth, error) {
 		nil,
 	)
 	if err != nil {
-		return auth, err
+		return auth, fmt.Errorf("error generating auth request: %v", err)
 	}
 
 	req.SetBasicAuth(plugin.APIUser, plugin.APIPass)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return auth, err
+		return auth, fmt.Errorf("error executing auth request: %v", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return auth, err
+		return auth, fmt.Errorf("error reading auth response: %v", err)
+	}
+
+	if strings.HasPrefix(string(body), "Unauthorized") {
+		return auth, fmt.Errorf("authorization failed for user %s", plugin.APIUser)
 	}
 
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&auth)
+
+	if err != nil {
+		return auth, fmt.Errorf("error decoding auth response: %v\nFirst 64 bytes of response: %s", err, string(body)[0:63])
+	}
 
 	return auth, err
 }
@@ -329,7 +337,7 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return events, err
+		return events, fmt.Errorf("error creating GET request for %s: %v", url, err)
 	}
 
 	if len(plugin.APIKey) == 0 {
@@ -341,18 +349,18 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return events, err
+		return events, fmt.Errorf("error executing GET request for %s: %v", url, err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return events, err
+		return events, fmt.Errorf("error reading response body during getEvents: %v", err)
 	}
 
 	err = json.Unmarshal(body, &events)
 	if err != nil {
-		return events, err
+		return events, fmt.Errorf("error unmarshalling response during getEvents: %v\nFirst 64 bytes of response: %s", err, string(body)[0:63])
 	}
 
 	result := filterEvents(events)
