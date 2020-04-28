@@ -7,6 +7,9 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Changed
+- Fix slice out of bounds error
+
 ## [0.1.3] - 2020-04-21
 
 ### Changed
