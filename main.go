@@ -270,7 +270,11 @@ func authenticate() (Auth, error) {
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&auth)
 
 	if err != nil {
-		return auth, fmt.Errorf("error decoding auth response: %v\nFirst 64 bytes of response: %s", err, string(body)[0:63])
+		trim := 63
+		if len(string(body)) < trim + 1 {
+			trim = len(string(body)) - 1
+		}
+		return auth, fmt.Errorf("error decoding auth response: %v\nFirst %d bytes of response: %s", err, trim + 1, string(body)[0:trim])
 	}
 
 	return auth, err
@@ -360,7 +364,11 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	err = json.Unmarshal(body, &events)
 	if err != nil {
-		return events, fmt.Errorf("error unmarshalling response during getEvents: %v\nFirst 64 bytes of response: %s", err, string(body)[0:63])
+		trim := 63
+		if len(string(body)) < trim + 1 {
+			trim = len(string(body)) - 1
+		}
+		return events, fmt.Errorf("error unmarshalling response during getEvents: %v\nFirst %d bytes of response: %s", err, trim + 1, string(body)[0:trim])
 	}
 
 	result := filterEvents(events)
