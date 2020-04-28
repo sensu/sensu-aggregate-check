@@ -270,11 +270,8 @@ func authenticate() (Auth, error) {
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&auth)
 
 	if err != nil {
-		trim := 63
-		if len(string(body)) < trim + 1 {
-			trim = len(string(body)) - 1
-		}
-		return auth, fmt.Errorf("error decoding auth response: %v\nFirst %d bytes of response: %s", err, trim + 1, string(body)[0:trim])
+		trim := 64
+		return auth, fmt.Errorf("error decoding auth response: %v\nFirst %d bytes of response: %s", err, trim, trimBody(body, trim))
 	}
 
 	return auth, err
@@ -364,11 +361,8 @@ func getEvents(auth Auth, namespace string) ([]*types.Event, error) {
 
 	err = json.Unmarshal(body, &events)
 	if err != nil {
-		trim := 63
-		if len(string(body)) < trim + 1 {
-			trim = len(string(body)) - 1
-		}
-		return events, fmt.Errorf("error unmarshalling response during getEvents: %v\nFirst %d bytes of response: %s", err, trim + 1, string(body)[0:trim])
+		trim := 64
+		return events, fmt.Errorf("error unmarshalling response during getEvents: %v\nFirst %d bytes of response: %s", err, trim, trimBody(body, trim))
 	}
 
 	result := filterEvents(events)
@@ -470,4 +464,11 @@ func executeCheck(event *types.Event) (int, error) {
 	fmt.Printf("Everything is OK\n")
 
 	return sensu.CheckStateOK, nil
+}
+func trimBody(body []byte, maxlen int) string {
+        if len(string(body)) < maxlen {
+                maxlen = len(string(body))
+        }
+
+        return string(body)[0:maxlen]
 }
