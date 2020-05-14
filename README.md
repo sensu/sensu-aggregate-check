@@ -8,6 +8,7 @@
   - [Sensu Go](#sensu-go)
     - [Asset registration](#asset-registration)
     - [Check definition](#check-definition)
+    - [RBAC](#rbac)
   - [Sensu Core](#sensu-core)
 - [Installation from source](#installation-from-source)
 - [Additional notes](#additional-notes)
@@ -85,6 +86,34 @@ spec:
   - email
 ```
 
+### RBAC
+
+It is advised to use [RBAC][3] to create a user scoped specifically for purposes such as this check and
+to not re-use the admin account.  For this check, in particular, the account would need access to
+list and retrieve events.  The example below shows how to create a limited-scope user and the necessary
+role and role-binding resources to give it the required access.
+
+```
+$ sensuctl user create aggregate --password='4yva#ko!Yq'
+Created
+
+$ sensuctl role create get-events --verb list,get --resource events
+Created
+
+$ sensuctl role-binding create aggregate-get-events --role=get-events --user=aggregate
+Created
+```
+
+Though you could use the user and password combination above with this check, the best practice
+would be to use an [API key][4] instead.  You can create the API key with sensuctl:
+
+```
+$ sensuctl api-key grant aggregate
+Created: /api/core/v2/apikeys/03f66dbf-6fe0-40d4-8174-95b5eab95649
+```
+
+The key (the text after [...]/apikeys/) above can be used with the `--api-key` argument in place of using `api-user` and `api-pass`.
+
 ### Sensu Core
 
 N/A
@@ -104,4 +133,6 @@ To contribute to this plugin, see [CONTRIBUTING](https://github.com/sensu/sensu-
 
 [1]: https://bonsai.sensu.io/assets/sensu/sensu-aggregate-check
 [2]: https://github.com/sensu/sensu-aggregate-check/releases
+[3]: https://docs.sensu.io/sensu-go/latest/reference/rbac/
+[4]: https://docs.sensu.io/sensu-go/latest/reference/apikeys/
 
