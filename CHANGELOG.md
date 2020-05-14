@@ -7,6 +7,9 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Changed
+- Updated README to include section on RBAC
+
 ## [0.1.4] - 2020-04-28
 
 ### Changed
