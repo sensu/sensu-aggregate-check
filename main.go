@@ -26,6 +26,7 @@ type Config struct {
 	APIPass            string
 	APIKey             string
 	Secure             bool
+	SkipSilence        bool
 	TrustedCAFile      string
 	InsecureSkipVerify bool
 	Protocol           string
@@ -50,6 +51,7 @@ type Counters struct {
 	Warning  int
 	Critical int
 	Unknown  int
+	Silenced int
 	Total    int
 }
 
@@ -199,6 +201,15 @@ var (
 			Default:   "",
 			Usage:     "TLS CA certificate bundle in PEM format",
 			Value:     &plugin.TrustedCAFile,
+		},
+		&sensu.PluginConfigOption{
+			Path:      "skip-silence",
+			Env:       "",
+			Argument:  "skip-silence",
+			Shorthand: "S",
+			Default:   false,
+			Usage:     "Skip silenced events (not recommended!)",
+			Value:     &plugin.SkipSilence,
 		},
 	}
 )
@@ -405,6 +416,11 @@ func executeCheck(event *types.Event) (int, error) {
 		entities[event.Entity.ObjectMeta.Name] = ""
 		checks[event.Check.ObjectMeta.Name] = ""
 
+		if len(event.Check.GetSilenced()) > 0 && plugin.SkipSilence {
+			counters.Silenced++
+			continue
+		}
+
 		switch event.Check.Status {
 		case 0:
 			counters.Ok++
@@ -466,9 +482,9 @@ func executeCheck(event *types.Event) (int, error) {
 	return sensu.CheckStateOK, nil
 }
 func trimBody(body []byte, maxlen int) string {
-        if len(string(body)) < maxlen {
-                maxlen = len(string(body))
-        }
+	if len(string(body)) < maxlen {
+		maxlen = len(string(body))
+	}
 
-        return string(body)[0:maxlen]
+	return string(body)[0:maxlen]
 }
