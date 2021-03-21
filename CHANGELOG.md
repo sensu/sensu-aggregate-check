@@ -6,6 +6,7 @@ and this project adheres to [Semantic
 Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+- Add --skip-silence option 
 
 ### Changed
 - Updated README to include section on RBAC

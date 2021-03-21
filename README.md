@@ -48,6 +48,7 @@ Flags:
   -i, --insecure-skip-verify     skip TLS certificate verification (not recommended!)
   -n, --namespaces string        Comma-delimited list of Sensu Go Namespaces to query for Events (e.g. 'us-east-1,us-west-2') (default "default")
   -s, --secure                   Use TLS connection to API
+  -S, --skip-silence             Skip silenced events (not recommended!)
   -t, --trusted-ca-file string   TLS CA certificate bundle in PEM format
   -W, --warn-count int           Warning threshold - count of Events in warning state
   -w, --warn-percent int         Warning threshold - % of Events in warning state
